@@ -235,7 +235,7 @@
     <button class="lobby-btn btn-shop" onclick="openShop()"><span class="bico">🛒</span><span id="btnShop">Магазин</span></button>
     <button class="lobby-btn btn-inv" onclick="openInventory()"><span class="bico">🎒</span><span id="btnInv">Инвентарь</span></button>
     <button class="lobby-btn btn-settings" onclick="openSettings()"><span class="bico">⚙️</span><span id="btnSettings">Настройки</span></button>
-    <button class="lobby-btn btn-friends" onclick=""><span class="bico">👥</span><span id="btnFriends">Пригласить друзей</span></button>
+    <button class="lobby-btn btn-friends" onclick="vkBridge.send('VKWebAppShowInviteBox')"><span class="bico">👥</span><span id="btnFriends">Пригласить друзей</span></button>
   </div>
 </div>
 
@@ -514,6 +514,9 @@ const I18N = {
     lose: 'Поражение',
     noReward: 'Награды нет',
     toLobby: 'В лобби',
+    doubleRewardBtn: '🎬 Удвоить награду',
+    claimBtn: 'Забрать',
+    doubled: 'Награда удвоена!',
     turnPrefix: 'Ход: ',
     blueTurn: 'Ход синих...',
     youSurrendered: 'Вы сдались!',
@@ -758,6 +761,9 @@ const I18N = {
     lose: 'Defeat',
     noReward: 'No reward',
     toLobby: 'To Lobby',
+    doubleRewardBtn: '🎬 Double Reward',
+    claimBtn: 'Claim',
+    doubled: 'Reward Doubled!',
     turnPrefix: 'Turn: ',
     blueTurn: 'Blue turn...',
     youSurrendered: 'You surrendered!',
@@ -1047,11 +1053,27 @@ function loadPlayer() {
       });
     }
   } catch(e) {}
+  // Загрузка из VK Storage (асинхронно, применит данные после загрузки)
+  try {
+    vkBridge.send('VKWebAppStorageGet', {keys: ['game']}).then(function(data) {
+      if (data.keys && data.keys[0] && data.keys[0].value) {
+        var savedVK = JSON.parse(data.keys[0].value);
+        player = Object.assign({}, DEFAULT_PLAYER, savedVK, {
+          characters: savedVK.characters || DEFAULT_PLAYER.characters
+        });
+        savePlayer(); // синхронизируем с localStorage
+      }
+    });
+  } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_PLAYER));
 }
 
 function savePlayer() {
   try { localStorage.setItem('chervi2d_player', JSON.stringify(player)); } catch(e) {}
+  // Сохранение в VK Storage
+  try {
+    vkBridge.send('VKWebAppStorageSet', {key: 'game', value: JSON.stringify(player)});
+  } catch(e) {}
 }
 
 function regenEnergy() {
@@ -1464,7 +1486,7 @@ function showBossInfo(bossId){
 }
 
 
-function startBattle(difficulty) {
+function _startBattleActual(difficulty) {
   regenEnergy();
   if (player.energy <= 0) {
     showLobbyMsg(t('noEnergy'));
@@ -1482,6 +1504,7 @@ function startBattle(difficulty) {
     currentBoss = null;
     currentMap = {easy:0,medium:1,hard:2}[difficulty] || 0;
   }
+
   // Initialize boss state
   bossCooldowns = {};
   bossPhase = 0;
@@ -1492,6 +1515,18 @@ function startBattle(difficulty) {
   closeMenu('playMenu');
   hideLobby();
   startGame();
+}
+
+function startBattle(difficulty) {
+  // Показ рекламы перед заходом на уровень
+  _showAdOverlay();
+  vkBridge.send('VKWebAppShowNativeAds', {ad_format:'interstitial'}).then(function(data) {
+    _hideAdOverlay();
+    _startBattleActual(difficulty);
+  }).catch(function(err) {
+    _hideAdOverlay();
+    _startBattleActual(difficulty);
+  });
 }
 
 
@@ -1516,7 +1551,6 @@ function onGameEnd(winnerTeam) {
   const isWin = (winnerTeam === 0); // player is team 0
   if (isWin) {
   const reward = DIFF_REWARDS[gameMode] || (BOSS_TYPES[gameMode] ? BOSS_TYPES[gameMode].reward : 50);
-    player.money += reward;
     player.wins++;
     player.level = Math.floor(player.wins / 3) + 1;
     player.maxEnergy = 5 + Math.floor(player.level / 5);
@@ -1534,12 +1568,50 @@ function showResultScreen(win, reward) {
   let html = '<div style="background:#1e2a3a;border-radius:16px;padding:40px;text-align:center;max-width:400px;">';
   html += '<div style="font-size:48px;margin-bottom:16px;">' + (win ? '🎉' : '😞') + '</div>';
   html += '<h2 style="color:' + (win ? '#0f9b8e' : '#e94560') + ';font-size:28px;margin-bottom:12px;">' + (win ? t('win') : t('lose')) + '</h2>';
-  if (win) html += '<p style="color:#ffd700;font-size:22px;font-weight:bold;margin-bottom:20px;">+' + reward + ' 💰</p>';
-  else html += '<p style="color:#888;font-size:16px;margin-bottom:20px;">' + t('noReward') + '</p>';
-  html += '<button onclick="returnToLobby()" style="padding:12px 32px;border:none;border-radius:10px;background:#e94560;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;">' + t('toLobby') + '</button>';
+  if (win) {
+    html += '<p id="rewardAmount" style="color:#ffd700;font-size:22px;font-weight:bold;margin-bottom:20px;">+' + reward + ' 💰</p>';
+    html += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px;">';
+    html += '<button id="doubleBtn" onclick="doubleReward()" style="padding:14px 32px;border:none;border-radius:10px;background:linear-gradient(135deg,#0f9b8e,#0a7d6e);color:#fff;font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(15,155,142,0.4);">' + t('doubleRewardBtn') + '</button>';
+    html += '<button onclick="claimReward()" style="padding:12px 32px;border:none;border-radius:10px;background:#e94560;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;">' + t('claimBtn') + '</button>';
+    html += '</div>';
+  } else {
+    html += '<p style="color:#888;font-size:16px;margin-bottom:20px;">' + t('noReward') + '</p>';
+    html += '<button onclick="returnToLobby()" style="padding:12px 32px;border:none;border-radius:10px;background:#e94560;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;">' + t('toLobby') + '</button>';
+  }
   html += '</div>';
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
+  if (win) { pendingReward = reward; rewardDoubled = false; }
+}
+
+// Текущая награда в окне победы (может быть удвоена)
+let pendingReward = 0;
+let rewardDoubled = false;
+
+function doubleReward() {
+  if (rewardDoubled) return;
+  var btn = document.getElementById('doubleBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '...'; }
+  vkBridge.send('VKWebAppShowNativeAds', {ad_format:'reward'}).then(function(data) {
+    if (data.result) {
+      rewardDoubled = true;
+      pendingReward *= 2;
+      var p = document.getElementById('rewardAmount');
+      if (p) { p.textContent = '+' + pendingReward + ' 💰'; p.style.color = '#00ff88'; p.textContent += ' ✨'; }
+      if (btn) { btn.style.display = 'none'; }
+      showMsg(t('doubled'), 2);
+    } else {
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = t('doubleRewardBtn'); }
+    }
+  }).catch(function(err) {
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = t('doubleRewardBtn'); }
+  });
+}
+
+function claimReward() {
+  player.money += pendingReward;
+  savePlayer();
+  returnToLobby();
 }
 
 function returnToLobby() {
