@@ -7,6 +7,17 @@
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
 <script>vkBridge.send("VKWebAppInit");</script>
 <style>
+#adOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;z-index:9999;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Arial,sans-serif;}
+#adOverlay .ad-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top:4px solid #fff;border-radius:50%;animation:adspin 1s linear infinite;margin-bottom:20px;}
+@keyframes adspin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+#adOverlay .ad-text{font-size:18px;}
+</style>
+<div id="adOverlay"><div class="ad-spinner"></div><div class="ad-text">Реклама загружается...</div></div>
+<script>
+function _showAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='flex';}}
+function _hideAdOverlay(){var o=document.getElementById('adOverlay');if(o){o.style.display='none';}}
+</script>
+<style>
   body { margin:0; overflow:hidden; background:#87ceeb; font-family:Arial,sans-serif; }
   canvas { display:block; }
   #teamHP { position:fixed; top:10px; left:10px; z-index:260; display:flex; flex-direction:column; gap:6px; }
