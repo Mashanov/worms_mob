@@ -437,9 +437,9 @@ function pauseMusic() {
   if (audio && typeof audio.playing === 'function' && audio.playing()) {
     musicWasPlaying = true;
     audio.pause();
-  } else {
-    musicWasPlaying = false;
   }
+  // Не сбрасываем musicWasPlaying в false — иначе событие blur,
+  // сработавшее после visibilitychange, затрёт флаг и музыка не возобновится.
 }
 
 function resumeMusic() {
@@ -1089,6 +1089,7 @@ const DEFAULT_PLAYER = {
 };
 
 const ENERGY_REGEN_MS = 30 * 60 * 1000; // 30 minutes
+var vkDataReady = false; // флаг: данные из VK Storage загружены
 
 function loadPlayer() {
   // 1) Сначала пытаемся загрузить синхронно из localStorage
@@ -1106,11 +1107,16 @@ function loadPlayer() {
           characters: savedVK.characters || DEFAULT_PLAYER.characters
         });
         savePlayer(); // синхронизируем с localStorage
-        // Скрываем окно обучения, если данные пришли после показа
-        if (player.tutorialSeen) {
-          var tp = document.getElementById('tutorialPrompt');
-          if (tp) tp.style.display = 'none';
-        }
+      }
+      // Данные из VK загружены — теперь можно показывать обучение (или не показывать)
+      vkDataReady = true;
+      if (!player.tutorialSeen) {
+        showTutorialPrompt();
+      }
+    }).catch(function() {
+      vkDataReady = true;
+      if (!player.tutorialSeen) {
+        showTutorialPrompt();
       }
     });
   } catch(e) {}
@@ -1154,6 +1160,16 @@ function getEnergyTimerStr() {
 
 let player = loadPlayer();
 let gameMode = null; let gameActive = false;
+
+// Fallback: если VK не ответит за 3 секунды — показываем обучение по localStorage
+setTimeout(function() {
+  if (!vkDataReady) {
+    vkDataReady = true;
+    if (!player.tutorialSeen && document.getElementById('lobby').style.display !== 'none') {
+      showTutorialPrompt();
+    }
+  }
+}, 3000);
 
 const SHOP_WEAPONS = [
   {id:'dynamite', name:'Динамит', icon:'🧨', desc:'Взрыв через 3с', price:300},
@@ -1287,7 +1303,9 @@ function showLobby() {
   document.getElementById('powerWrap').style.display = 'none';
   document.getElementById('invOverlay').style.display = 'none';
   updateLobbyDisplay();
-  showTutorialPrompt();
+  if (vkDataReady) {
+    showTutorialPrompt();
+  }
 }
 
 function hideLobby() {
