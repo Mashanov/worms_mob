@@ -9,7 +9,7 @@
 <style>
   body { margin:0; overflow:hidden; background:#87ceeb; font-family:Arial,sans-serif; }
   canvas { display:block; }
-  #teamHP { position:fixed; top:10px; left:10px; z-index:1; display:flex; flex-direction:column; gap:6px; }
+  #teamHP { position:fixed; top:10px; left:10px; z-index:260; display:flex; flex-direction:column; gap:6px; }
   .team-bar { display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.5); padding:4px 10px 4px 8px; border-radius:8px; }
   .team-bar .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
   .team-bar .dot.red { background:#d63b2f; }
@@ -21,10 +21,10 @@
   .team-bar .val { color:#fff; font-size:13px; font-weight:bold; min-width:28px; text-align:right; }
   #turnTimer { position:fixed; top:10px; left:50%; transform:translateX(-50%); width:56px; height:56px;
     border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; display:flex; align-items:center;
-    justify-content:center; font-size:24px; font-weight:bold; z-index:1;
+    justify-content:center; font-size:24px; font-weight:bold; z-index:260;
     border:3px solid rgba(255,255,255,0.25); transition:border-color .3s, color .3s; }
   #turnTimer.urgent { border-color:#f44; color:#f44; }
-  #pauseBtn, #invBtn { position:fixed; top:10px; z-index:1; width:50px; height:50px; border-radius:12px;
+  #pauseBtn, #invBtn { position:fixed; top:10px; z-index:260; width:50px; height:50px; border-radius:12px;
     border:none; background:rgba(0,0,0,0.5); color:#fff; font-size:22px; cursor:pointer;
     transition:background .15s, transform .1s; }
   #pauseBtn { right:70px; } #invBtn { right:10px; }
@@ -38,11 +38,13 @@
     background:rgba(0,0,0,.5); border-radius:9px; overflow:hidden; display:none; pointer-events:none; z-index:1; }
   #powerBar { height:100%; width:0%; background:linear-gradient(90deg,#4f4,#ff4,#f44); border-radius:9px; }
   #invOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
-    justify-content:center; align-items:center; z-index:100; }
+    justify-content:center; align-items:center; z-index:350; }
   #invBox { background:#2a2a3a; border-radius:12px; padding:24px; min-width:320px;
-    box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    max-width:90vw; max-height:80vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,0.5);
+    -webkit-overflow-scrolling:touch; }
   #invTitle { color:#fff; text-align:center; margin:0 0 18px; font-size:22px; }
-  #invItems { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  #invItems { display:flex; gap:16px; justify-content:center; flex-wrap:wrap;
+    max-height:60vh; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:4px; }
   #invHint { color:#888; text-align:center; margin:16px 0 0; font-size:13px; }
   .inv-card { width:120px; padding:14px; border-radius:10px; text-align:center;
     cursor:pointer; transition:background .15s, opacity .15s;
@@ -148,7 +150,7 @@
   /* Energy display */
   #energyTimer { color:#aaa; font-size:13px; text-align:center; margin-top:6px; }
   /* Surrender btn in game */
-  #surrenderBtn { position:fixed; top:10px; right:130px; z-index:1; width:50px; height:50px;
+  #surrenderBtn { position:fixed; top:10px; right:130px; z-index:260; width:50px; height:50px;
     border-radius:12px; border:none; background:rgba(200,60,40,.6); color:#fff; font-size:20px;
     cursor:pointer; transition:background .15s, transform .1s; display:none; }
   #surrenderBtn:hover { background:rgba(200,60,40,.85); }
@@ -172,7 +174,7 @@
 
 
   /* ===== MOBILE CONTROLS ===== */
-  #mobileControls { display:none; position:fixed; bottom:0; left:0; right:0; z-index:150;
+  #mobileControls { display:none; position:fixed; bottom:0; left:0; right:0; z-index:250;
     pointer-events:none; user-select:none; -webkit-user-select:none; }
   #mobileControls.show { display:block; }
   .mc-btn { position:absolute; pointer-events:auto; width:64px; height:64px; border-radius:50%;
@@ -191,10 +193,10 @@
     background:rgba(200,60,40,0.6); border-color:rgba(255,100,80,0.5); }
   #mcFire.charging { background:rgba(255,150,50,0.7); }
   /* Inventory + pause already exist as #invBtn and #pauseBtn */
-  @media (pointer:coarse) { #mobileControls { display:block; } }
+  #mobileControls { display:block; } /* Always show on mobile-first design */
 
   /* TUTORIAL */
-  #tutorialPrompt { position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85); }
+  #tutorialPrompt { position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85); }
   #tutorialPrompt .tp-box { background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:20px;padding:40px;text-align:center;max-width:420px;border:2px solid #e94560;box-shadow:0 0 30px rgba(233,69,96,0.3); }
   #tutorialPrompt .tp-icon { font-size:56px;margin-bottom:16px; }
   #tutorialPrompt .tp-title { color:#fff;font-size:26px;font-weight:bold;margin-bottom:10px; }
@@ -203,7 +205,7 @@
   #tutorialPrompt .tp-btn { padding:14px 32px;border:none;border-radius:10px;font-size:17px;font-weight:bold;cursor:pointer; }
   #tutorialPrompt .tp-yes { background:#0f9b8e;color:#fff; }
   #tutorialPrompt .tp-no { background:#333;color:#fff; }
-  #tutorialBar { position:fixed;bottom:0;left:0;right:0;z-index:200;display:none;background:linear-gradient(0deg,rgba(0,0,0,0.9),rgba(0,0,0,0.7));padding:14px 20px;flex-direction:column;align-items:center;gap:8px; }
+  #tutorialBar { position:fixed;top:70px;left:0;right:0;z-index:260;display:none;background:linear-gradient(180deg,rgba(0,0,0,0.9),rgba(0,0,0,0.7));padding:14px 20px;flex-direction:column;align-items:center;gap:8px; }
   #tutorialBar .tb-step { color:#e94560;font-size:13px;font-weight:bold;letter-spacing:1px; }
   #tutorialBar .tb-text { color:#fff;font-size:16px;text-align:center;max-width:600px;line-height:1.4; }
   #tutorialBar .tb-keys { color:#ffd700;font-size:15px;font-weight:bold; }
@@ -212,7 +214,7 @@
   #tutorialBar .tb-dot.active { background:#e94560; }
   #tutorialBar .tb-dot.done { background:#0f9b8e; }
   #tutorialBar .tb-next { margin-top:6px;padding:10px 28px;border:none;border-radius:8px;background:#0f9b8e;color:#fff;font-size:15px;font-weight:bold;cursor:pointer; }
-  #tutorialSkip { position:fixed;bottom:20px;right:20px;z-index:201;display:none;padding:8px 16px;border:1px solid #e94560;border-radius:8px;background:rgba(0,0,0,0.7);color:#e94560;font-size:13px;cursor:pointer; }
+  #tutorialSkip { position:fixed;top:10px;right:10px;z-index:261;display:none;padding:8px 16px;border:1px solid #e94560;border-radius:8px;background:rgba(0,0,0,0.7);color:#e94560;font-size:13px;cursor:pointer; }
   #tutorialSkip:hover { background:rgba(233,69,96,0.2); }
 
 </style>
@@ -554,12 +556,12 @@ const I18N = {
     teleportMsg: 'Телепортация!',
     clickTarget: 'Кликните для выбора цели',
     musicBoxWarn: 'Шкатулка появится через 3 сек — отойдите!',
-    ramExplode: 'Space — взрыв!',
+    ramExplode: '🔥 — взрыв!',
     musicBoxActive: 'Шкатулка активирована!',
     // UI
     pause: 'ПАУЗА',
     arsenal: 'Арсенал',
-    arsenalHint: 'Клик — выбрать, Q — закрыть',
+    arsenalHint: 'Нажмите на оружие, чтобы выбрать его',
     wind: 'ветер',
     loadingMap: 'Загрузка карты...',
     bossPhase: 'Фаза ',
@@ -578,20 +580,20 @@ const I18N = {
     tutSkip: 'Пропустить обучение',
     // Tutorial steps
     tut1Title: 'Движение',
-    tut1Text: 'Используйте клавиши A и D, чтобы ходить влево и вправо.',
-    tut1Keys: 'A / D',
+    tut1Text: 'Используйте кнопки ◀ и ▶ внизу экрана, чтобы ходить влево и вправо.',
+    tut1Keys: '◀ / ▶ — движение',
     tut2Title: 'Прыжок',
-    tut2Text: 'Нажмите F для прыжка вперёд. R — кувырок назад (с разворотом).',
-    tut2Keys: 'F — прыжок, R — кувырок',
+    tut2Text: 'Нажмите кнопку ⬆ для прыжка вперёд.',
+    tut2Keys: '⬆ — прыжок',
     tut3Title: 'Прицеливание',
-    tut3Text: 'Стрелки вверх/вниз меняют угол выстрела. Стрелки влево/вправо — направление.',
-    tut3Keys: '↑ ↓ — угол, ← → — сторона',
+    tut3Text: 'Кнопки ∧ и ∨ меняют угол выстрела. Кнопки ◀ и ▶ — направление.',
+    tut3Keys: '∧ ∨ — угол, ◀ ▶ — сторона',
     tut4Title: 'Стрельба',
-    tut4Text: 'Зажмите ПРОБЕЛ, чтобы накопить силу, и отпустите, чтобы выстрелить!',
-    tut4Keys: 'ПРОБЕЛ — зажать и отпустить',
+    tut4Text: 'Зажмите кнопку 🔥, чтобы накопить силу, и отпустите, чтобы выстрелить!',
+    tut4Keys: '🔥 — зажать и отпустить',
     tut5Title: 'Арсенал',
-    tut5Text: 'Нажмите Q, чтобы открыть арсенал и выбрать другое оружие.',
-    tut5Keys: 'Q — открыть арсенал',
+    tut5Text: 'Нажмите кнопку 🎒, чтобы открыть арсенал и выбрать другое оружие.',
+    tut5Keys: '🎒 — открыть арсенал',
     tut6Title: 'Ветер',
     tut6Text: 'Ветер влияет на полёт снарядов. Следите за индикатором ветра вверху экрана — поправляйте прицел!',
     tut6Keys: 'Ветер показан вверху экрана',
@@ -625,7 +627,7 @@ const I18N = {
     d_mine: 'Взрыв при наступании',
     d_teleport: 'Случайное место',
     d_potion: '+25% HP',
-    d_jetpack: 'Полёт на Space',
+    d_jetpack: 'Полёт на кнопке 🔥',
     d_freezeGun: 'Заморозка на 1 ход',
     d_airstrike: 'Ракета с неба + огонь',
     d_fragGrenade: 'Осколки после взрыва',
@@ -633,7 +635,7 @@ const I18N = {
     d_poison: 'Отравление на 2 хода',
     d_tTeleport: 'Телепорт в точку',
     d_musicBox: 'Урон в радиусе',
-    d_ram: 'Бежит, Space = взрыв',
+    d_ram: 'Бежит, 🔥 = взрыв',
     // Boss ability names
     ab_stoneSkin: 'Каменная кожа',
     ab_boulderThrow: 'Бросок валуна',
@@ -798,12 +800,12 @@ const I18N = {
     teleportMsg: 'Teleportation!',
     clickTarget: 'Click to select target',
     musicBoxWarn: 'Music box appears in 3 sec — step away!',
-    ramExplode: 'Space — explode!',
+    ramExplode: '🔥 — explode!',
     musicBoxActive: 'Music box activated!',
     // UI
     pause: 'PAUSE',
     arsenal: 'Arsenal',
-    arsenalHint: 'Click — select, Q — close',
+    arsenalHint: 'Tap a weapon to select it',
     wind: 'wind',
     loadingMap: 'Loading map...',
     bossPhase: 'Phase ',
@@ -822,20 +824,20 @@ const I18N = {
     tutSkip: 'Skip tutorial',
     // Tutorial steps
     tut1Title: 'Movement',
-    tut1Text: 'Use the A and D keys to walk left and right.',
-    tut1Keys: 'A / D',
+    tut1Text: 'Use the ◀ and ▶ buttons at the bottom of the screen to walk left and right.',
+    tut1Keys: '◀ / ▶ — движение',
     tut2Title: 'Jump',
-    tut2Text: 'Press F to jump forward. R — backflip (turns around).',
-    tut2Keys: 'F — jump, R — backflip',
+    tut2Text: 'Press the ⬆ button to jump forward.',
+    tut2Keys: '⬆ — jump',
     tut3Title: 'Aiming',
-    tut3Text: 'Up/Down arrows change the shooting angle. Left/Right arrows — direction.',
-    tut3Keys: '↑ ↓ — angle, ← → — side',
+    tut3Text: 'The ∧ and ∨ buttons change the shooting angle. The ◀ and ▶ buttons — direction.',
+    tut3Keys: '∧ ∨ — angle, ◀ ▶ — side',
     tut4Title: 'Shooting',
-    tut4Text: 'Hold SPACE to charge power, and release to fire!',
-    tut4Keys: 'SPACE — hold and release',
+    tut4Text: 'Hold the 🔥 button to charge power, and release to fire!',
+    tut4Keys: '🔥 — hold and release',
     tut5Title: 'Arsenal',
-    tut5Text: 'Press Q to open the arsenal and select a different weapon.',
-    tut5Keys: 'Q — open arsenal',
+    tut5Text: 'Press the 🎒 button to open the arsenal and select a different weapon.',
+    tut5Keys: '🎒 — open arsenal',
     tut6Title: 'Wind',
     tut6Text: 'Wind affects projectile flight. Watch the wind indicator at the top of the screen — adjust your aim!',
     tut6Keys: 'Wind shown at top of screen',
@@ -869,7 +871,7 @@ const I18N = {
     d_mine: 'Explodes on contact',
     d_teleport: 'Random location',
     d_potion: '+25% HP',
-    d_jetpack: 'Fly on Space',
+    d_jetpack: 'Fly on 🔥 button',
     d_freezeGun: 'Freeze for 1 turn',
     d_airstrike: 'Rocket from sky + fire',
     d_fragGrenade: 'Shards after explosion',
@@ -877,7 +879,7 @@ const I18N = {
     d_poison: 'Poison for 2 turns',
     d_tTeleport: 'Teleport to point',
     d_musicBox: 'Area damage',
-    d_ram: 'Runs, Space = explode',
+    d_ram: 'Runs, 🔥 = explode',
     // Boss ability names
     ab_stoneSkin: 'Stone Skin',
     ab_boulderThrow: 'Boulder Throw',
@@ -1083,7 +1085,7 @@ const SHOP_WEAPONS = [
   {id:'mine', name:'Мина', icon:'🔴', desc:'Взрыв при наступании', price:450},
   {id:'teleport', name:'Телепорт', icon:'✨', desc:'Случайное место', price:600},
   {id:'potion', name:'Зелье', icon:'🧪', desc:'+25% HP', price:360},
-  {id:'jetpack', name:'Ранец', icon:'🔥', desc:'Полёт на Space', price:750},
+  {id:'jetpack', name:'Ранец', icon:'🔥', desc:'Полёт на кнопке 🔥', price:750},
   {id:'freezeGun', name:'Морозка', icon:'❄️', desc:'Заморозка на 1 ход', price:900},
   {id:'airstrike', name:'Авиа-удар', icon:'🚀', desc:'Ракета с неба + огонь', price:1200},
   {id:'fragGrenade', name:'Осколочная', icon:'💣', desc:'Осколки после взрыва', price:1050},
@@ -1091,7 +1093,7 @@ const SHOP_WEAPONS = [
   {id:'poison', name:'Яд', icon:'🧪', desc:'Отравление на 2 хода', price:840},
   {id:'tTeleport', name:'Телепорт+', icon:'📍', desc:'Телепорт в точку', price:1350},
   {id:'musicBox', name:'Шкатулка', icon:'🎵', desc:'Урон в радиусе', price:1050},
-  {id:'ram', name:'Баран', icon:'🐏', desc:'Бежит, Space = взрыв', price:1500}
+  {id:'ram', name:'Баран', icon:'🐏', desc:'Бежит, 🔥 = взрыв', price:1500}
 ];
 
 const DIFF_REWARDS = { easy: 50, medium: 100, hard: 200, boss_ogre: 500, boss_mage: 600, boss_undead: 750, boss_dragon: 1000 };
@@ -1715,6 +1717,28 @@ addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY;
   if(!dragging)return;camX=dragCamX-(e.clientX-dragSX)/zoom;camY=dragCamY+(e.clientY-dragSY)/zoom;
   var _hv=cv.height/(2*zoom);camY=Math.max(WORLD.bottom+_hv,Math.min(TERRAIN_TOP-_hv,camY));});
 addEventListener('mouseup',e=>{if(e.button!==0)return;dragging=false;cv.style.cursor='default';});
+// Touch camera panning on canvas
+let touchDragId=null,touchSX=0,touchSY=0,touchCamX=0,touchCamY=0;
+cv.addEventListener('touchstart',e=>{
+  if(e.touches.length!==1)return;
+  if(targetingMode){const t=e.touches[0];const wx=(t.clientX-cv.width/2)/zoom+camX;const wy=-(t.clientY-cv.height/2)/zoom+camY;
+    executeTargetedWeapon(targetWpn,wx,wy);targetingMode=false;targetWpn=null;return;}
+  touchDragId=e.touches[0].identifier;touchSX=e.touches[0].clientX;touchSY=e.touches[0].clientY;
+  touchCamX=camX;touchCamY=camY;camManual=true;
+},{passive:false});
+cv.addEventListener('touchmove',e=>{
+  if(touchDragId===null)return;
+  for(const t of e.changedTouches){if(t.identifier!==touchDragId)continue;
+    camX=touchCamX-(t.clientX-touchSX)/zoom;camY=touchCamY+(t.clientY-touchSY)/zoom;
+    var _hv=cv.height/(2*zoom);camY=Math.max(WORLD.bottom+_hv,Math.min(TERRAIN_TOP-_hv,camY));
+    e.preventDefault();}
+},{passive:false});
+cv.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){if(t.identifier===touchDragId){touchDragId=null;}}
+},{passive:false});
+cv.addEventListener('touchcancel',e=>{
+  for(const t of e.changedTouches){if(t.identifier===touchDragId){touchDragId=null;}}
+},{passive:false});
 function worldToScreen(x,y){return[(x-camX)*zoom+cv.width/2,-(y-camY)*zoom+cv.height/2];}
 function updateCamera(dt){if(!camManual){let tx=0,ty=8;
   if(state==='over'){tx=0;ty=8;}
@@ -3276,7 +3300,7 @@ function updateTutorial(dt){
     if(w&&(keys['f']||keys['r']))tutJumped=true;
     if(tutJumped){tutorialStep++;updateTutorialUI();}
   }else if(s.wait==='aim'){
-    if(w&&(keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright']))tutAimed=true;
+    if(w&&(keys['arrowup']||keys['arrowdown']||keys['a']||keys['d']))tutAimed=true;
     if(tutAimed){tutorialStep++;updateTutorialUI();}
   }else if(s.wait==='fire'){
     if(projectiles.length>0)tutFired=true;
@@ -3350,6 +3374,7 @@ function animate(){requestAnimationFrame(animate);
     e.preventDefault();
     if(activeWorm && activeWorm.alive && activeWorm.onGround && (state==='player'||state==='dynamiteWait')){
       activeWorm.onGround=false; activeWorm.vy=11; activeWorm.vx=activeWorm.dir*15; activeWorm.jumpRotSpeed=0;
+      keys['f']=true; setTimeout(function(){keys['f']=false;},100);
     }
   }, {passive:false});
 
