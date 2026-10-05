@@ -430,11 +430,11 @@ try {
     console.log('Ошибка подключения аудио');
 }
 
-/* VK Mini App: пауза/возобновление при сворачивании */
+/* === Пауза/возобновление музыки при сворачивании === */
 var musicWasPlaying = false;
 
 function pauseMusic() {
-  if (audio && audio.playing()) {
+  if (audio && typeof audio.playing === 'function' && audio.playing()) {
     musicWasPlaying = true;
     audio.pause();
   } else {
@@ -443,26 +443,30 @@ function pauseMusic() {
 }
 
 function resumeMusic() {
-  if (audio && musicWasPlaying && player.music && !audio.playing()) {
+  if (!audio || !player.music) return;
+  // Разблокируем AudioContext (браузер мог его suspended)
+  if (typeof Howler !== 'undefined' && Howler.ctx && Howler.ctx.state === 'suspended') {
+    Howler.ctx.resume().catch(function(){});
+  }
+  if (musicWasPlaying && typeof audio.playing === 'function' && !audio.playing()) {
     audio.play();
   }
 }
 
-// VK Bridge: приложение свернуто / ушло в фон
-try {
+// VK Bridge: основные события для мини-приложений
+if (typeof vkBridge !== 'undefined') {
   vkBridge.subscribe(function(e) {
-    var type = e.detail ? e.detail.type : e.type;
-    if (type === 'VKWebAppViewHide') {
+    if (!e || !e.detail) return;
+    if (e.detail.type === 'VKWebAppViewHide') {
       pauseMusic();
-    } else if (type === 'VKWebAppViewRestore') {
+    }
+    if (e.detail.type === 'VKWebAppViewRestore') {
       resumeMusic();
     }
   });
-} catch(err) {
-  console.log('vkBridge subscribe error:', err);
 }
 
-// Запасной вариант: document.visibilityChange (для браузеров)
+// Fallback для браузеров вне VK
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     pauseMusic();
@@ -471,7 +475,7 @@ document.addEventListener('visibilitychange', function() {
   }
 });
 
-// Старые обработчики как fallback
+// Старые обработчики как запасной вариант
 self.onblur = function() { pauseMusic(); };
 self.onfocus = function() { resumeMusic(); };
 </script>
@@ -1087,39 +1091,13 @@ const DEFAULT_PLAYER = {
 const ENERGY_REGEN_MS = 30 * 60 * 1000; // 30 minutes
 
 function loadPlayer() {
-  // 1. Синхронно грузим из localStorage — чтобы tutorialSeen и т.д. были сразу
-  var saved = null;
-  try { saved = JSON.parse(localStorage.getItem('chervi2d_player')); } catch(e) {}
-  if (saved && typeof saved === 'object') {
-    var p = Object.assign({}, DEFAULT_PLAYER, saved, {
-      characters: saved.characters || DEFAULT_PLAYER.characters
-    });
-    // Если данные есть в localStorage — поднимаем флаг, чтобы обучение не выскочило
-    // до загрузки из VK Storage
-    if (saved.tutorialSeen) p.tutorialSeen = true;
-    // 2. Асинхронно догружаем из VK Storage (может быть свежее)
-    try {
-      vkBridge.send('VKWebAppStorageGet', {keys: ['game']}).then(function(data) {
-        if (data.keys && data.keys[0] && data.keys[0].value) {
-          var savedVK = JSON.parse(data.keys[0].value);
-          player = Object.assign({}, DEFAULT_PLAYER, savedVK, {
-            characters: savedVK.characters || DEFAULT_PLAYER.characters
-          });
-          savePlayer(); // синхронизируем с localStorage
-          // ПЕРЕпроверяем обучение после загрузки VK данных
-          var tp = document.getElementById('tutorialPrompt');
-          if (player.tutorialSeen && tp) {
-            tp.style.display = 'none';
-          } else if (!player.tutorialSeen && tp && tp.style.display === 'none') {
-            // Если VK Storage говорит что обучение не пройдено, а мы скрыли — показываем
-            tp.style.display = 'flex';
-          }
-        }
-      });
-    } catch(e) {}
-    return p;
-  }
-  // 3. Нет данных в localStorage — возвращаем DEFAULT, асинхронно пробуем VK Storage
+  // 1) Сначала пытаемся загрузить синхронно из localStorage
+  var loaded = null;
+  try {
+    var saved = localStorage.getItem('chervi2d_player');
+    if (saved) loaded = JSON.parse(saved);
+  } catch(e) {}
+  // 2) Асинхронно грузим из VK Storage — перезапишет, если там свежее
   try {
     vkBridge.send('VKWebAppStorageGet', {keys: ['game']}).then(function(data) {
       if (data.keys && data.keys[0] && data.keys[0].value) {
@@ -1127,15 +1105,21 @@ function loadPlayer() {
         player = Object.assign({}, DEFAULT_PLAYER, savedVK, {
           characters: savedVK.characters || DEFAULT_PLAYER.characters
         });
-        savePlayer();
-        // Проверяем обучение после загрузки
-        var tp = document.getElementById('tutorialPrompt');
-        if (player.tutorialSeen && tp) {
-          tp.style.display = 'none';
+        savePlayer(); // синхронизируем с localStorage
+        // Скрываем окно обучения, если данные пришли после показа
+        if (player.tutorialSeen) {
+          var tp = document.getElementById('tutorialPrompt');
+          if (tp) tp.style.display = 'none';
         }
       }
     });
   } catch(e) {}
+  // Возвращаем данные из localStorage (где tutorialSeen уже корректен) или DEFAULT
+  if (loaded) {
+    return Object.assign({}, DEFAULT_PLAYER, loaded, {
+      characters: loaded.characters || DEFAULT_PLAYER.characters
+    });
+  }
   return JSON.parse(JSON.stringify(DEFAULT_PLAYER));
 }
 
