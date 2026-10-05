@@ -58,7 +58,7 @@
 
   /* ===== LOBBY ===== */
   #lobby { position:fixed; inset:0; z-index:200; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:10px; padding:16px;
+    align-items:center; justify-content:flex-start; gap:10px; padding:16px; padding-top:5vh;
     background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
     font-family:Arial,sans-serif; overflow-y:auto; }
   #lobby h1 { color:#e94560; font-size:clamp(24px,5vw,42px); margin:0 0 6px; text-shadow:0 2px 10px rgba(233,69,96,.5); }
@@ -193,7 +193,7 @@
     background:rgba(200,60,40,0.6); border-color:rgba(255,100,80,0.5); }
   #mcFire.charging { background:rgba(255,150,50,0.7); }
   /* Inventory + pause already exist as #invBtn and #pauseBtn */
-  #mobileControls { display:block; } /* Always show on mobile-first design */
+  /* Mobile controls shown only via .show class (in battle) */
 
   /* TUTORIAL */
   #tutorialPrompt { position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85); }
@@ -412,7 +412,7 @@ try {
         volume: 0.2,
         loop: true,
         onload: function (){
-            if (player.music && !document.hidden) audio.play();
+            if (player.music && !document.hidden && !audio.playing()) audio.play();
         }
     });
 } catch(e) {
@@ -426,7 +426,7 @@ self.onblur = function() {
 
 
 self.onfocus = function() {
-    if (audio && player.music) {
+    if (audio && player.music && !audio.playing()) {
       audio.play();
     }
 };
@@ -1410,7 +1410,7 @@ function redeemPromo() {
     if(mt)mt.addEventListener('change',function(){
         player.music=this.checked;savePlayer();
         if(audio){
-            if(player.music && !document.hidden) audio.play();
+            if(player.music && !document.hidden && !audio.playing()) audio.play();
             else audio.pause();
         }
     });
@@ -3172,7 +3172,7 @@ let startGamePending=false;
 function startGame(){gameActive=true;
   if(!tutorialMode){document.getElementById('tutorialBar').style.display='none';document.getElementById('tutorialSkip').style.display='none';}
   effects=[];projectiles=[];mines=[];dynamites=[];shake=0;
-  state='player';turnTeam=0;nextIdx=[0,0];activeWorm=null;charging=false;jetpackActive=false;
+  state='loading';turnTeam=0;nextIdx=[0,0];activeWorm=null;charging=false;jetpackActive=false;
   paused=false;pauseEl.style.display='none';powerWrapEl.style.display='none';
   invOpen=false;invOverlay.style.display='none';camManual=false;camX=0;camY=(TERRAIN_TOP+WORLD.bottom)/2;
   minesLeft=4;teleportsLeft=1;potionsLeft=2;damageEndTurn=false;
@@ -3221,7 +3221,7 @@ function finishStartGame(){
     }
   }
   turnTeam=1;setupTurn();
-  if(tutorialMode){document.getElementById('tutorialBar').style.display='flex';document.getElementById('tutorialSkip').style.display='block';updateTutorialUI();}
+  if(tutorialMode){document.getElementById('tutorialBar').style.display='flex';document.getElementById('tutorialSkip').style.display='none';updateTutorialUI();}
 }
 
 // ===== TUTORIAL SYSTEM =====
