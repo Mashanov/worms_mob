@@ -1054,16 +1054,6 @@ const DEFAULT_PLAYER = {
 const ENERGY_REGEN_MS = 30 * 60 * 1000; // 30 minutes
 
 function loadPlayer() {
-  try {
-    const saved = localStorage.getItem('chervi2d_player');
-    if (saved) {
-      const p = JSON.parse(saved);
-      // Merge with defaults to handle new fields
-      return Object.assign({}, DEFAULT_PLAYER, p, {
-        characters: p.characters || DEFAULT_PLAYER.characters
-      });
-    }
-  } catch(e) {}
   // Загрузка из VK Storage (асинхронно, применит данные после загрузки)
   try {
     vkBridge.send('VKWebAppStorageGet', {keys: ['game']}).then(function(data) {
